@@ -1,2 +1,6 @@
-RUST - Redundant Uplink SwiTchero
+rust - Redundant Uplink SwiTchero
 =================================
+
+This perl daemon monitors multiple uplinks for connectivity.
+Uplinks might be used in a active/active, active/standy or
+any higher complex configuration.
