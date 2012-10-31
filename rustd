@@ -85,6 +85,7 @@ mydie("Could not read config file '$opt_c'.") unless(-r $opt_c);
 $logger->info("config file: '$opt_c'");
 
 my %conf;
+my %uplinks;
 eval `cat "$opt_c"`;
 
 # enable log to file
