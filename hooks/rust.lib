@@ -1,0 +1,66 @@
+#!/bin/sh
+
+# rust - Redundant Uplink SwiTchero
+#
+# Authors:
+#   Thomas Liske <thomas@fiasko-nw.net>
+#
+# Copyright Holder:
+#   2012 (C) Thomas Liske <thomas@fiasko-nw.net>
+#
+# License:
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this package; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+#
+
+. /etc/rust/rust.conf
+
+function rust_log {
+    logger -s -t "rust[$RUST_IFACE]" -- "$@"
+}
+
+function rust_alloc_table {
+    grep -q "rust_${1}_table" "$RUST_TABLES_FN" && return
+
+    local n=100
+    touch "$RUST_COUNTER_FN"
+    . "$RUST_COUNTER_FN"
+    n=$(expr $n + 1)
+    echo "n=$n" > "$RUST_COUNTER_FN"
+
+    rust_log "allocated table id #$n"
+
+    echo -e "$n\trust_${1}_table" >> "$RUST_TABLES_FN"
+}
+
+function rust_add_uplink {
+    if [ -z "$RUST_GATEWAY" ] ; then
+	rust_log "link has no gateway"
+	exit 0
+    fi
+
+    rust_alloc_table "$RUST_IFACE"
+
+    rust_log "add uplink $RUST_IFACE[$RUST_IPADDR] via $RUST_GATEWAY"
+    ip route add default via $RUST_GATEWAY dev $RUST_IFACE table rust_${RUST_IFACE}_table
+    ip rule add from $RUST_IPADDR lookup rust_${RUST_IFACE}_table
+}
+
+function rust_del_uplink {
+    [ -z "$RUST_GATEWAY" ] && return
+
+    rust_log "del uplink $RUST_IFACE[$RUST_IPADDR] via $RUST_GATEWAY"
+    ip rule del from $RUST_IPADDR lookup rust_${RUST_IFACE}_table
+    ip route del default via $RUST_GATEWAY dev $RUST_IFACE table rust_${RUST_IFACE}_table
+}
