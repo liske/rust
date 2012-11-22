@@ -30,7 +30,7 @@ function rust_log {
     logger -s -t "rust[$RUST_IFACE]" -- "$@"
 }
 
-function rust_alloc_table {
+function rust_alloc_tableid {
     grep -q "rust_${1}_table" "$RUST_TABLES_FN" && return
 
     local n=100
@@ -44,23 +44,30 @@ function rust_alloc_table {
     echo -e "$n\trust_${1}_table" >> "$RUST_TABLES_FN"
 }
 
+function rust_get_tableid {
+    grep "\trust_${1}_table" "$RUST_TABLES_FN" | read RUST_TABLE_ID bulk
+}
+
 function rust_add_uplink {
     if [ -z "$RUST_GATEWAY" ] ; then
 	rust_log "link has no gateway"
 	exit 0
     fi
 
-    rust_alloc_table "$RUST_IFACE"
+    rust_alloc_tableid "$RUST_IFACE"
+    rust_get_tableid "$RUST_IFACE"
 
     rust_log "add uplink $RUST_IFACE[$RUST_IPADDR] via $RUST_GATEWAY"
     ip route add default via $RUST_GATEWAY dev $RUST_IFACE table rust_${RUST_IFACE}_table
-    ip rule add from $RUST_IPADDR lookup rust_${RUST_IFACE}_table
+    ip rule add from $RUST_IPADDR lookup rust_${RUST_IFACE}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
 }
 
 function rust_del_uplink {
     [ -z "$RUST_GATEWAY" ] && return
 
+    rust_get_tableid "$RUST_IFACE"
+
     rust_log "del uplink $RUST_IFACE[$RUST_IPADDR] via $RUST_GATEWAY"
-    ip rule del from $RUST_IPADDR lookup rust_${RUST_IFACE}_table
+    ip rule del from $RUST_IPADDR lookup rust_${RUST_IFACE}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
     ip route del default via $RUST_GATEWAY dev $RUST_IFACE table rust_${RUST_IFACE}_table
 }
