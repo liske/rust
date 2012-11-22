@@ -26,4 +26,7 @@
 
 . /etc/rust/rust.lib
 
+grep -q "rust_default" "$RUST_TABLES_FN" || echo -e "100\trust_default" >> "$RUST_TABLES_FN"
+
 ip rule add from all lookup main priority $RUST_BASE_PRIO
+ip rule add from all lookup rust_default priority $(expr $RUST_BASE_PRIO + 1000)
