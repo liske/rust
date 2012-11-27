@@ -25,6 +25,7 @@
 #
 
 use Config;
+use EV;
 use File::Basename;
 use Getopt::Std;
 use Log::Dispatch;
@@ -132,6 +133,30 @@ unless($opt_f) {
     $logger->notice('Could not remove console dispatcher!') unless($logger->remove('console'));
 }
 
-while(1) {
-    sleep(60);
+sub iprtmon {
+    my $l = <IPRTMON>;
+    close(IPRTMON) unless(defined($l));
+
+    chomp($l);
+    return unless($l =~ /^(Deleted )?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(\/\d+)?)(.+)$/);
+    my ($del, $prefix, $opts) = ($1, $2, $4);
+
+    $opts =~ s/\s+/ /g;
+    $opts =~ s/^\s+//;
+
+    my %opts = split(/ /, $opts);
+
+    return if(exists($opts{table}) && $opts{table} =~ /^rust_/);
+
+    if($del) {
+	$logger->info("route removed: $prefix => $opts");
+    }
+    else {
+	$logger->info("route added: $prefix => $opts");
+    }
 }
+
+open(IPRTMON, "ip monitor route |") || die;
+my $wiprtmon = EV::io \*IPRTMON, EV::READ, \&iprtmon;
+
+EV::run;
