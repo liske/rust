@@ -25,7 +25,7 @@
 #
 
 use Config;
-use EV;
+use AnyEvent;
 use File::Basename;
 use Getopt::Std;
 use Log::Dispatch;
@@ -78,6 +78,10 @@ sub mydie($) {
     $logger->critical(shift);
     exit 1;
 }
+
+AnyEvent::post_detect {
+    $logger->info("using $AnyEvent::MODEL event loop");
+};
 
 our $opt_c = '/etc/rust/rustd.conf';
 our $opt_f;
@@ -157,6 +161,6 @@ sub iprtmon {
 }
 
 open(IPRTMON, "ip monitor route |") || die;
-my $wiprtmon = EV::io \*IPRTMON, EV::READ, \&iprtmon;
+my $wiprtmon = AnyEvent->io(fh => \*IPRTMON, poll => 'r', cb => \&iprtmon);
 
-EV::run;
+AnyEvent->condvar->recv;
