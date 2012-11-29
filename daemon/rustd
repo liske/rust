@@ -188,13 +188,15 @@ sub iprtmon {
 
     my %opts = split(/ /, $opts);
 
-    return if(exists($opts{table}) && $opts{table} =~ /^rust_/);
+    return if(exists($opts{table}));
 
     if($del) {
 	$logger->info("route del: $prefix => $opts");
+	system(qw(ip route del), $prefix, %opts, qw(table rust_main));
     }
     else {
 	$logger->info("route add: $prefix => $opts");
+	system(qw(ip route add), $prefix, %opts, qw(table rust_main));
     }
 }
 
