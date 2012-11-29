@@ -49,7 +49,9 @@ my $logffile = sub { my %p = @_;  return (scalar localtime())." [$$] $p{message}
 my $logger = Log::Dispatch->new(callbacks => $logfmt);
 
 my $daemonize;
+my $mypid = $$;
 my @pipe_pids;
+
 END {
     foreach my $pid (@pipe_pids) {
 	kill 'TERM', $pid;
@@ -57,13 +59,46 @@ END {
     $logger->notice('terminated') if(defined($logger) && !defined($daemonize));
 }
 
-sub TERM_handler {
-    $logger->notice('got SIGTERM');
+sub WARN_handler {
+    my($signal) = @_;
+
+    if(defined $logger) {
+        $logger->warning("WARNING: $signal");
+    }
+    else {
+        printf STDERR "WARNING: $signal\n";
+    }
+}
+
+sub DIE_handler {
+    my($signal) = @_;
+
+    if(defined $logger) {
+        $logger->critical("ERROR: $signal");
+    }
+    else {
+        printf STDERR "ERROR: $signal\n";
+    }
+
+    exit 1;
+}
+
+sub INT_handler {
+    if(defined($mypid) && ($mypid == $$)) {
+        if(defined $logger) {
+            $logger->notice('Got SIGINT, terminating.');
+        }
+        else {
+            printf STDERR "Got SIGINT, terminating.\n";
+        }
+    }
+
     exit;
 }
 
+$SIG{__WARN__} = 'WARN_handler';
+$SIG{__DIE__}  = 'DIE_handler';
 $SIG{INT} = 'INT_handler';
-$SIG{TERM} = 'TERM_handler';
 $SIG{PIPE} = 'IGNORE';
 $SIG{CHLD} = 'IGNORE';
 
