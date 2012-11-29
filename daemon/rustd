@@ -139,7 +139,10 @@ unless($opt_f) {
 
 sub iprtmon {
     my $l = <IPRTMON>;
-    close(IPRTMON) unless(defined($l));
+    unless(defined($l)) {
+	close(IPRTMON);
+	return;
+    }
 
     chomp($l);
     return unless($l =~ /^(Deleted )?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(\/\d+)?)(.+)$/);
@@ -153,10 +156,10 @@ sub iprtmon {
     return if(exists($opts{table}) && $opts{table} =~ /^rust_/);
 
     if($del) {
-	$logger->info("route removed: $prefix => $opts");
+	$logger->info("route del: $prefix => $opts");
     }
     else {
-	$logger->info("route added: $prefix => $opts");
+	$logger->info("route add: $prefix => $opts");
     }
 }
 
