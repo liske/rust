@@ -173,9 +173,10 @@ unless($opt_f) {
 }
 
 sub iprtmon {
-    my $l = <IPRTMON>;
+    my $fh = shift;
+    my $l = <$fh>;
     unless(defined($l)) {
-	close(IPRTMON);
+	close($fh);
 	return;
     }
 
@@ -201,6 +202,11 @@ sub iprtmon {
 }
 
 open(IPRTMON, "ip monitor route |") || die;
-my $wiprtmon = AnyEvent->io(fh => \*IPRTMON, poll => 'r', cb => \&iprtmon);
+my $wiprtmon = AnyEvent->io(fh => \*IPRTMON, poll => 'r', cb => sub { iprtmon(\*IPRTMON); });
+
+system(qw(ip route flush table rust_main));
+open(IPRTCP, "ip route show table main |");
+my $wiprtcp;
+$wiprtcp = AnyEvent->io(fh => \*IPRTCP, poll => 'r', cb => sub { iprtmon(\*IPRTCP); }, on_eof => sub { $wiprtcp = undef; });
 
 AnyEvent->condvar->recv;
