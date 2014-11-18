@@ -74,8 +74,12 @@ function rust_add_uplink {
 
     for from in $RUST_MATCH; do
 	match=`rust_fmtmatch "$from"`
-	rust_log "use uplink $match via $RUST_GATEWAY"
-	ip rule add $match lookup rust_${RUST_IFACE}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+	if [ -n "$match" ]; then
+	    rust_log "use uplink $match via $RUST_GATEWAY"
+	    ip rule add $match lookup rust_${RUST_IFACE}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+	else
+	    rust_log "unknown uplink matcher '$from'"
+	fi
     done
 }
 
@@ -86,8 +90,12 @@ function rust_del_uplink {
 
     for from in $RUST_MATCH; do
 	match=`rust_fmtmatch "$from"`
-	rust_log "del uplink $match via $RUST_GATEWAY"
-	ip rule del $match lookup rust_${RUST_IFACE}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+	if [ -n "$match" ]; then
+	    rust_log "del uplink $match via $RUST_GATEWAY"
+	    ip rule del $match lookup rust_${RUST_IFACE}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+	else
+	    rust_log "unknown uplink matcher '$from'"
+	fi
     done
 
     rust_log "del uplink $RUST_IPADDR via $RUST_GATEWAY"
