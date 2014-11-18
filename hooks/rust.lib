@@ -48,6 +48,17 @@ function rust_get_tableid {
     grep "\\srust_${1}_table" "$RUST_TABLES_FN" | cut -f1
 }
 
+function rust_fmtstring {
+    case "$1" in
+	connected)
+	    echo "$RUST_IPADDR/$RUST_PFLEN"
+	    ;;
+	*)
+	    echo "$1"
+	    ;;
+    done
+}
+
 function rust_add_uplink {
     if [ -z "$RUST_GATEWAY" ] ; then
 	rust_log "link has no gateway"
@@ -57,7 +68,7 @@ function rust_add_uplink {
     rust_alloc_tableid "$RUST_IFACE"
     RUST_TABLE_ID=`rust_get_tableid "$RUST_IFACE"`
 
-    rust_log "add uplink $RUST_IFACE[$RUST_IPADDR] via $RUST_GATEWAY"
+    rust_log "add uplink $RUST_IPADDR via $RUST_GATEWAY"
     ip route add default via $RUST_GATEWAY dev $RUST_IFACE table rust_${RUST_IFACE}_table
     ip rule add from $RUST_IPADDR lookup rust_${RUST_IFACE}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
 }
@@ -67,25 +78,38 @@ function rust_del_uplink {
 
     RUST_TABLE_ID=`rust_get_tableid "$RUST_IFACE"`
 
-    rust_log "del uplink $RUST_IFACE[$RUST_IPADDR] via $RUST_GATEWAY"
+    rust_log "del uplink $RUST_IPADDR via $RUST_GATEWAY"
     ip rule del from $RUST_IPADDR lookup rust_${RUST_IFACE}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
     ip route del default via $RUST_GATEWAY dev $RUST_IFACE table rust_${RUST_IFACE}_table
 }
 
 function rust_adduse_uplink {
-    [ -z "$IF_RUST_USEGW" ] && return
+    [ -z "$RUST_USEGW" ] && return
 
+    rust_alloc_tableid "$RUST_IFACE"
     RUST_TABLE_ID=`rust_get_tableid "$RUST_IFACE"`
 
-    rust_log "use uplink $RUST_IFACE[$RUST_IPADDR] via $IF_RUST_USEGW"
-    ip rule add from $RUST_IPADDR lookup rust_${IF_RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+    rust_log "use uplink $RUST_IPADDR via $RUST_USEGW"
+    ip rule add from $RUST_IPADDR lookup rust_${RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+
+    for from in $RUST_USEFROM; do
+	f=`rust_fmtstring "$from"`
+	rust_log "use uplink $f via $RUST_USEGW"
+	ip rule add from $f lookup rust_${RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+    done
 }
 
 function rust_deluse_uplink {
-    [ -z "$IF_RUST_USEGW" ] && return
+    [ -z "$RUST_USEGW" ] && return
 
     RUST_TABLE_ID=`rust_get_tableid "$RUST_IFACE"`
 
-    rust_log "del uplink $RUST_IFACE[$RUST_IPADDR] via $IF_RUST_USEGW"
-    ip rule del from $RUST_IPADDR lookup rust_${IF_RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+    for from in $RUST_USEFROM; do
+	f=`rust_fmtstring "$from"`
+	rust_log "del uplink $f via $RUST_USEGW"
+	ip rule del from $f lookup rust_${RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+    done
+
+    rust_log "del uplink $RUST_IPADDR via $RUST_USEGW"
+    ip rule del from $RUST_IPADDR lookup rust_${RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
 }
