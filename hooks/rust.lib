@@ -72,7 +72,7 @@ function rust_add_uplink {
     ip route add default via $RUST_GATEWAY dev $RUST_IFACE table rust_${RUST_IFACE}_table
     ip rule add from $RUST_IPADDR lookup rust_${RUST_IFACE}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
 
-    for from in $RUST_USEMATCH; do
+    for from in $RUST_MATCH; do
 	match=`rust_fmtmatch "$from"`
 	rust_log "use uplink $match via $RUST_USEGW"
 	ip rule add $match lookup rust_${RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
@@ -84,7 +84,7 @@ function rust_del_uplink {
 
     RUST_TABLE_ID=`rust_get_tableid "$RUST_IFACE"`
 
-    for from in $RUST_USEMATCH; do
+    for from in $RUST_MATCH; do
 	match=`rust_fmtmatch "$from"`
 	rust_log "del uplink $match via $RUST_USEGW"
 	ip rule del $match lookup rust_${RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
