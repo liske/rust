@@ -48,13 +48,13 @@ function rust_get_tableid {
     grep "\\srust_${1}_table" "$RUST_TABLES_FN" | cut -f1
 }
 
-function rust_fmtstring {
+function rust_fmtmatch {
     case "$1" in
 	connected)
-	    echo "$RUST_IPADDR/$RUST_PFLEN"
+	    echo "from $RUST_IPADDR/$RUST_PFLEN"
 	    ;;
-	*)
-	    echo "$1"
+	*:*)
+	    echo "${1//:/ }"
 	    ;;
     esac
 }
@@ -92,10 +92,10 @@ function rust_adduse_uplink {
     rust_log "use uplink $RUST_IPADDR via $RUST_USEGW"
     ip rule add from $RUST_IPADDR lookup rust_${RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
 
-    for from in $RUST_USEFROM; do
-	f=`rust_fmtstring "$from"`
-	rust_log "use uplink $f via $RUST_USEGW"
-	ip rule add from $f lookup rust_${RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+    for from in $RUST_USEMATCH; do
+	match=`rust_fmtmatch "$from"`
+	rust_log "use uplink $match via $RUST_USEGW"
+	ip rule add $match lookup rust_${RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
     done
 }
 
@@ -104,10 +104,10 @@ function rust_deluse_uplink {
 
     RUST_TABLE_ID=`rust_get_tableid "$RUST_IFACE"`
 
-    for from in $RUST_USEFROM; do
-	f=`rust_fmtstring "$from"`
-	rust_log "del uplink $f via $RUST_USEGW"
-	ip rule del from $f lookup rust_${RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+    for from in $RUST_USEMATCH; do
+	match=`rust_fmtmatch "$from"`
+	rust_log "del uplink $match via $RUST_USEGW"
+	ip rule del $match lookup rust_${RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
     done
 
     rust_log "del uplink $RUST_IPADDR via $RUST_USEGW"
