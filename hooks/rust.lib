@@ -71,3 +71,21 @@ function rust_del_uplink {
     ip rule del from $RUST_IPADDR lookup rust_${RUST_IFACE}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
     ip route del default via $RUST_GATEWAY dev $RUST_IFACE table rust_${RUST_IFACE}_table
 }
+
+function rust_adduse_uplink {
+    [ -z "$IF_RUST_USEGW" ] && return
+
+    RUST_TABLE_ID=`rust_get_tableid "$RUST_GATEWAY"`
+
+    rust_log "use uplink $RUST_IFACE[$RUST_IPADDR] via $IF_RUST_USEGW"
+    ip rule add from $RUST_IPADDR lookup rust_${IF_RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+}
+
+function rust_deluse_uplink {
+    [ -z "$IF_RUST_USEGW" ] && return
+
+    RUST_TABLE_ID=`rust_get_tableid "$RUST_GATEWAY"`
+
+    rust_log "del uplink $RUST_IFACE[$RUST_IPADDR] via $IF_RUST_USEGW"
+    ip rule del from $RUST_IPADDR lookup rust_${IF_RUST_USEGW}_table priority $(expr $RUST_BASE_PRIO + $RUST_TABLE_ID)
+}

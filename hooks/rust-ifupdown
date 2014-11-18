@@ -38,22 +38,39 @@ RUST_IFACE="$IFACE"
 
 . /etc/rust/rust.lib
 
-if [ -z "$RUST_GATEWAY" ] ; then
+if [ -n "$RUST_GATEWAY" ] ; then
+    case "$MODE" in
+	start)
+	    rust_add_uplink
+	    ;;
+
+	stop)
+	    rust_del_uplink
+	    ;;
+
+	*)
+	    rust_log "unknown mode: \"$MODE\""
+	    exit 1
+	    ;;
+    esac
+else
+    if [ -n "$IF_RUST_USEGW" ]; then
+	case "$MODE" in
+	    start)
+		rust_adduse_uplink
+		;;
+
+	    stop)
+		rust_deluse_uplink
+		;;
+
+	    *)
+		rust_log "unknown mode: \"$MODE\""
+		exit 1
+		;;
+	esac
+    else
 	rust_log "link has no gateway"
 	exit 0
+    fi
 fi
-
-case "$MODE" in 
-    start)
-	rust_add_uplink
-	;;
-
-    stop)
-	rust_del_uplink
-	;;
-	
-    *)
-	rust_log "unknown mode: \"$MODE\""
-	exit 1
-	;;
-esac
