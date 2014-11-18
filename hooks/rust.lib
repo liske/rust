@@ -56,7 +56,7 @@ function rust_fmtstring {
 	*)
 	    echo "$1"
 	    ;;
-    done
+    esac
 }
 
 function rust_add_uplink {
