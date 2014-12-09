@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# This file allows to specify induvidual rust
+# options for each peer. The peer is identified
+# by pppd's linkname option.
+
+case "$LINKNAME" in
+#    dsl-provider)
+#	RUST_USEGW='fwmark:1'
+#	RUST_MATCH=''
+#	;;
+    *)
+	;;
+esac

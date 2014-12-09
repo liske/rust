@@ -28,6 +28,9 @@ RUST_IPADDR="$IPLOCAL"
 RUST_GATEWAY="$IPREMOTE"
 RUST_IFACE="$IFNAME"
 
+# get link specific configuration options
+test -r /etc/ppp/rust.linkmap && . /etc/ppp/rust.linkmap
+
 . /etc/rust/rust.lib
 
 rust_del_uplink
