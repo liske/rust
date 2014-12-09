@@ -6,8 +6,7 @@
 
 case "$LINKNAME" in
 #    dsl-provider)
-#	RUST_USEGW='fwmark:1'
-#	RUST_MATCH=''
+#	RUST_MATCH='fwmark:1'
 #	;;
     *)
 	;;
