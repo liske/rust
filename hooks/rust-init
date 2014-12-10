@@ -26,4 +26,4 @@
 
 . /etc/rust/rust.lib
 
-ip rule add from all lookup main priority $RUST_BASE_PRIO
+ip rule add from all lookup main priority $RUST_MAIN_PRIO
